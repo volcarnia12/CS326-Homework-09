@@ -16,6 +16,7 @@ const NUMBER_OF_PLAYERS = 2;
 // Player 1 starts the game
 let turn = 0;
 
+
 // Updates and displays the current payers turn.
 function updateTurn() {
   document.getElementById('turn').innerText = document.getElementById(
@@ -31,6 +32,64 @@ function renderRacks(racks) {
   racks.forEach((rack, i) =>
     rack.render(document.getElementById(`p${i + 1}-rack`))
   );
+}
+
+async function saveWordScore(name, word, score){
+
+  const options =  {
+    method: "POST",
+    body: JSON.stringify({
+        name: name,
+        word: word,
+        score: score
+    }),
+    headers: { "Content-type": "application/json" }
+  };
+  await fetch('/wordScore', options);
+  //return response;
+}
+
+
+const table = document.getElementById('table');
+let nameArr = [];
+let wordArr = [];
+let scoreArr = [];
+
+
+
+function displayWordScore(name, word, score){
+  //const table = document.getElementById('table')
+  /*table.style.width = '100px';
+  table.style.border = '1px solid black';*/
+  //console.log(nArr[0]);
+  /*while (table.firstChild) {
+    table.removeChild(table.firstChild);
+  }*/
+  //for (let i = 0; i < wordArr.length; i++) {
+    const tr = table.insertRow();
+    for (let j = 0; j < 3; j++) {
+      //console.log(nArr[i]);
+      if (j === 0){
+        const td = tr.insertCell();
+        td.appendChild(document.createTextNode(name));
+        td.style.border = '1px solid black';
+      }
+      else if (j === 1){
+        const td = tr.insertCell();
+        td.appendChild(document.createTextNode(word));
+        td.style.border = '1px solid black';
+      }
+      else {
+        const td = tr.insertCell();
+        //let scorer = sArr[i];
+        td.appendChild(document.createTextNode(score.toString()));
+        td.style.border = '1px solid black';
+      }
+    }
+    //window.localStorage.setItem('wordTable', table.innerHTML);
+  //}
+  //body.appendChild(tbl);
+  
 }
 
 // Create a new game.
@@ -100,18 +159,35 @@ document.getElementById('play').addEventListener('click', async () => {
       scores[turn % NUMBER_OF_PLAYERS] += score;
       document.getElementById('word').value = '';
       renderGame(game);
-
+      let name = document.getElementById(`p${(turn % NUMBER_OF_PLAYERS) + 1}-name`).value;
       // TODO: Save the player's name, word, and score to the server. You will
       //       need to use the `POST /wordScore` endpoint to do this. We
       //       recommend you write functions to do this for you rather than
       //       make calls to `fetch` directly in this function. For example:
       //
       //       `await saveWordScore(name, word, score);`
-      //
+      //        
       //       You will also want to update the word score table in the UI.
       //       Again, we recommend a function for this. For example:
       //
       //       `displayWordScore(name, word, score);`
+      /*app.post('/wordScore', (req, res) => {
+        const options = req.query;
+        await saveWordScore(options.name, options.word, options.score);
+        //res.send("POST Request Called")
+      })*/
+
+      nameArr.push(name);
+      wordArr.push(word);
+      scoreArr.push(utils.baseScore(word));
+
+      //console.log(nameArr);
+      
+    
+      await saveWordScore(name, word, score);
+      //await saveWordScore(name, word, utils.baseScore(word));
+      displayWordScore(name, word, score);
+      //displayWordScore(name, word, score);
 
       const used = utils.constructWord(rack.getAvailableTiles(), remaining);
       used.forEach((tile) => rack.removeTile(tile));
@@ -143,6 +219,74 @@ document.getElementById('help').addEventListener('click', () => {
   document.getElementById('hint').innerText = hint;
 });
 
+async function saveGameScore(name, score){
+  const options =  {
+    method: "POST",
+    body: JSON.stringify({
+        name: name,
+        score: score
+    }),
+    headers: { "Content-type": "application/json" }
+  };
+  await fetch('/gameScore', options);
+
+}
+
+async function topWordScores(){
+  const responseWord = await fetch('/highestWordScores');
+  const jsonWord = await responseWord.json();
+  console.log(jsonWord);
+
+  const topWords = document.getElementById('topWords');
+  for (let i = 0; i < jsonWord.length; i++) {
+    const tr = topWords.insertRow();
+    for (let j = 0; j < 3; j++) {
+      //console.log(nArr[i]);
+      if (j === 0){
+        const td = tr.insertCell();
+        td.appendChild(document.createTextNode(jsonWord[i].name));
+        td.style.border = '1px solid black';
+      }
+      else if (j === 1){
+        const td = tr.insertCell();
+        td.appendChild(document.createTextNode(jsonWord[i].word));
+        td.style.border = '1px solid black';
+      }
+      else {
+        const td = tr.insertCell();
+        //let scorer = sArr[i];
+        td.appendChild(document.createTextNode((jsonWord[i].score).toString()));
+        td.style.border = '1px solid black';
+      }
+    }
+  }
+}
+
+async function topGameScores(){
+  const responseWord = await fetch('/highestGameScores');
+  const jsonWord = await responseWord.json();
+  console.log(jsonWord);
+
+  const topGames = document.getElementById('topGames');
+  for (let i = 0; i < jsonWord.length; i++) {
+    const tr = topGames.insertRow();
+    for (let j = 0; j < 2; j++) {
+      //console.log(nArr[i]);
+      if (j === 0){
+        const td = tr.insertCell();
+        td.appendChild(document.createTextNode(jsonWord[i].name));
+        td.style.border = '1px solid black';
+      }
+      else {
+        const td = tr.insertCell();
+        //let scorer = sArr[i];
+        td.appendChild(document.createTextNode((jsonWord[i].score).toString()));
+        td.style.border = '1px solid black';
+      }
+    }
+  }
+}
+
 document.getElementById('end').addEventListener('click', async () => {
   // TODO: Add a button whose id is `end` before you complete this method.
   // TODO: Save the game scores to the server. You will need to use the
@@ -153,4 +297,14 @@ document.getElementById('end').addEventListener('click', async () => {
   //     `await saveGameScore(name, score[i]);`
   //
   //      Where `i` is the i'th player.
+    let name1 = document.getElementById(`p${1}-name`).value;
+    //await saveGameScore(name1, totalScore[0]);
+    let name2 = document.getElementById(`p${2}-name`).value;
+    await saveGameScore(name1, scores[0]);
+    await saveGameScore(name2, scores[1]);
+    console.log(scores[0]);
+    console.log(scores[1]);
+
+    topWordScores();
+    topGameScores();
 });

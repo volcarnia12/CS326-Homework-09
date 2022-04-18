@@ -69,3 +69,13 @@ input[type='number'] {
 .center {
   text-align: center;
 }
+
+table, th, td {
+  border: 1px solid black;
+  text-align: center;
+  align-items: center; /* left and right */
+  justify-content: center;
+}
+th, td {
+  padding: 10px;
+}

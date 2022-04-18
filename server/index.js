@@ -1,6 +1,7 @@
 import express from 'express';
 import { readFile, writeFile } from 'fs/promises';
 // TODO: import the morgan middleware from 'morgan'
+import logger from 'morgan';
 
 const WORD_SCORE_FILE = 'word-scores.json';
 const GAME_SCORE_FILE = 'game-scores.json';
@@ -50,6 +51,7 @@ const saveGameScore = saveToGameScoreFile(GAME_SCORE_FILE);
 async function top10WordScores() {
   const scores = await readWordScores();
   const sorted = scores.sort((a, b) => b.score - a.score);
+  //console.log(sorted);
   const top = sorted.slice(0, 10);
   return top;
 }
@@ -70,10 +72,33 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // TODO: Add the morgan middleware to the app.
+app.use(logger('dev'));
 // TODO: Add the express.static middleware to the app.
+app.use('/client', express.static('client'));
 
 // TODO: Implement the ExpressJS routes for this server.
 
+app.post('/wordScore', async (request, response) => {
+  const options = request.body;
+  saveWordScore(options.name, options.word, options.score);
+  response.status(200).json({ "status": "success" });
+});
+
+app.get('/highestWordScores', async (request, response) => {
+  const scores = await top10WordScores();
+  response.json(scores);
+});
+
+app.post('/gameScore', async (request, response) => {
+  const options = request.body;
+  saveGameScore(options.name, options.score);
+  response.status(200).json({ "status": "success" });
+});
+
+app.get('/highestGameScores', async (request, response) => {
+  const scores = await top10GameScores();
+  response.json(scores);
+});
 // Add your code here. 😎 👍
 // You can do this! Make sure you reference example applications covered in
 // class and in the associated exercises!
@@ -84,6 +109,7 @@ app.all('*', async (request, response) => {
 });
 
 // Start the server.
+
 app.listen(port, () => {
   console.log(`Server started on http://localhost:${port}`);
 });
